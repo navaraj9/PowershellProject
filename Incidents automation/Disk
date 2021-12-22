@@ -1,0 +1,87 @@
+$Header = @"
+<style>
+TABLE {border-width: 1px; border-style: solid; border-color: black; border-collapse: collapse;}
+TH {border-width: 1px; padding: 3px; border-style: solid; border-color: black; background-color: #6495ED;}
+TD {border-width: 1px; padding: 3px; border-style: solid; border-color: black;}
+</style>
+"@
+
+$file_data = Get-Content C:\Users\Administrator\Desktop\hostlist.txt
+
+$ArrMain =@()
+
+$obj=New-Object psobject
+
+$out_data = Foreach ($ServerName in $file_data ){
+
+
+"$ServerName::"
+
+if (Test-Connection -ComputerName $ServerName -Quiet -Count 1) {
+
+# Check Total Capacity of the Drive
+$TCapacity =
+@{
+    Expression = {"{0,19:n2}" -f ($_.Capacity / 1GB) };
+    Name       = 'Total Capacity (GB)';
+}
+ 
+# Freespace to be displayed in GB
+$Freespace =
+@{
+    Expression = { "{0,15:n2}" -f ($_.FreeSpace / 1GB) }; 
+    Name       = 'Free Space (GB)';
+}
+ 
+# Percentage value of the free space
+$PercentFree =
+@{
+    Expression = { [int]($_.Freespace * 100 / $_.Capacity) };
+    Name       = 'Free (%)'
+}
+
+ 
+# Calculation
+$data = Get-WmiObject -namespace "root/cimv2" -computername $ServerName -query "SELECT Name, Capacity, FreeSpace FROM Win32_Volume WHERE Capacity > 0 and (DriveType = 2 OR DriveType = 3)" |
+ 
+# Display of values
+Select-Object -Property Name, $TCapacity, $Freespace, $PercentFree  | Sort-Object 'Free (%)' -Descending
+
+$data
+
+""
+} 
+
+else
+{
+""
+"The server is not reachable"
+""
+
+}
+
+}
+
+$out_data
+
+
+
+$out_data | Out-File out.txt
+
+#import-csv out.txt | export-csv csvfile.csv
+
+
+
+
+$content = cat out.txt -Raw
+$title = 'My HTML'
+$html = @"
+<html>
+<head><title>$title</title></head>
+<body>
+<pre>$content</pre>
+</body>
+</html>
+"@
+$html | Out-File 'file.html'
+
