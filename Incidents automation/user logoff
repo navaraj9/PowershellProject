@@ -1,0 +1,35 @@
+$Servers = @("server2")
+$Result = @()
+foreach ($Server in $Servers) {
+
+    $Lines = @(query user /server:$s) -split "\n"
+
+
+    foreach($Line in $Lines) #Each Server Line
+    {
+    
+        if ($Line -match "USERNAME\s+SESSIONNAME\s+ID\s+STATE\s+IDLE TIME\s+LOGON TIME") {
+            continue  # If is the header then skip to next item in array
+        }
+        
+        $Parsed_Server = $Line -split '\s+'
+        
+        $Result += [PSCustomObject]@{
+            #SERVER = $Server
+            USERNAME = $Parsed_Server[0]
+            SESSIONNAME = $Parsed_Server[1]
+            ID = $Parsed_Server[2]
+            STATE = $Parsed_Server[3]
+            IDLE_TIME = $Parsed_Server[4]
+            LOGON_TIME = $Parsed_Server[5]
+
+            }
+            Write-Output($Parsed_Server[0])
+        #if($Parsed_Server[3] -match "Active"){
+        #$Parsed_Server[3]
+        #Disconnect-RDUser -HostServer Server2 -UnifiedSessionID 2
+        #}
+    }
+}
+
+$Result | Format-Table
